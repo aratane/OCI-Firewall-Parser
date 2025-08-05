@@ -1,0 +1,2 @@
+taxii2_client>=2.3.0
+stix2>=3.0.1
