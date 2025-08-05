@@ -14,8 +14,9 @@ Oracle Cloud Infrastructure (OCI) Firewall log Threat Analyzer adalah tools term
 * 🔐 Support Proxy / VPN Environment: Bisa berjalan di lingkungan terbatas atau korporat dengan dukungan proxy environment variable.
 
 ```yaml
-git clone https://github.com/0xjessie21/proxy-checker.git
-cd proxy-checker
+git clone https://github.com/0xjessie21/proxy-checker.git](https://github.com/0xjessie21/OCI-Firewall-Parser.git
+cd OCI-Firewall-Parser
+pip3 install -r requirements.txt --break-system-packages
 ```
 
 # Usage
