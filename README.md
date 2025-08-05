@@ -15,7 +15,7 @@ Oracle Cloud Infrastructure (OCI) Firewall log Threat Analyzer adalah tools term
 
 # Installation
 ```yaml
-git clone https://github.com/0xjessie21/proxy-checker.git
+git clone https://github.com/0xjessie21/OCI-Firewall-Parser.git
 cd OCI-Firewall-Parser
 pip3 install -r requirements.txt --break-system-packages
 ```
