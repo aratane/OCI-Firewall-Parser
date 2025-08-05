@@ -25,6 +25,9 @@ pip3 install -r requirements.txt --break-system-packages
 python oci-parser.py YOUR_OCI_LOG.json
 ```
 
+## Credits
+ILCS Security Operations Center Team
+
 
 ## 📜 License
 
