@@ -102,10 +102,18 @@ MITRE_SEVERITY_LEVEL = {
 
 # Hostname → Identity mapping
 HOSTNAME_IDENTITY_MAP = {
+    "tos-nusantara.ilcs.co.id": "Terminal Operating System Nusantara Cluster 1 - Palapa",
+    "praya.ilcs.co.id": "Terminal Operating System Nusantara Cluster 1 - Praya",
     "tos-nusantara.pelindo.co.id": "Terminal Operating System Nusantara Cluster 2 - Palapa",
-    "vpn.pelindo.co.id": "Fortinet SSL VPN Gateway",
-    "wp.pelindo.co.id": "WordPress Portal Internal",
-    "api.pelindo.co.id": "API Gateway Pelindo"
+    "praya.pelindo.co.id": "Terminal Operating System Nusantara Cluster 2 - Praya",
+    "tos-nusantara2.ilcs.co.id": "Terminal Operating System Nusantara Cluster 3 - Palapa",
+    "praya2.ilcs.co.id": "Terminal Operating System Nusantara Cluster 3 - Praya",
+    "tos-nusantara3.ilcs.co.id": "Terminal Operating System Nusantara Cluster 4 - Palapa",
+    "praya3.ilcs.co.id": "Terminal Operating System Nusantara Cluster 4 - Praya",
+    "parama.pelindo.co.id": "Terminal Operating System Nusantara Parama",
+    "phinnisi.pelindo.co.id": "Vessel Management System",
+    "ptosc.pelindo.co.id": "Pelindo Terminal Operating System Car",
+    "ptosr.pelindo.co.id": "Pelindo Terminal Operating System Roro"
 }
 
 def get_severity_style(severity):
