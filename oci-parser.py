@@ -68,7 +68,7 @@ MITRE_ATTACK_TYPES = {
     "T1608.003": "Stage Capabilities: Payloads",
     "T1587.001": "Develop Capabilities: Malware",
     "T1587.002": "Develop Capabilities: Tool",
-    "T1587.003": "Develop Capabilities: Exploit"
+    "T1587.003": "Develop Capabilities: Exploit",
     "T1505.003": "PHPUnit Remote Code Execution",
     "T1059.004": "Shellshock Bash Remote Code Execution (CVE-2014-6271)",
     "T1595.001": "Path Enumeration Attempt",
@@ -76,7 +76,13 @@ MITRE_ATTACK_TYPES = {
     "T1190.001": "Unauthenticated File Inclusion – LinkPreview Plugin Exploit",
     "T1110": "Fortinet SSL VPN Credential Stuffing",
     "T1595.002": "GlobalProtect Login Page Enumeration Attempt",
-    "T1110.003": "WordPress Admin Brute Force Attack"
+    "T1110.003": "WordPress Admin Brute Force Attack",
+    "T1595": "Network Service Scanning",
+    "T1595.001": "Web Directory Brute Force (e.g. dirsearch, gobuster)",
+    "T1595.002": "Login Page Discovery / Enumeration (e.g. /admin, /wp-login.php)",
+    "T1592.004": "Gather Victim Host Information: Web Directory Structure",
+    "T1190": "Exploit Public-Facing Application (entry via discovered paths)",
+    "T1083": "File and Directory Discovery (local/remote paths)"
 }
 
 
