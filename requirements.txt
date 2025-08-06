@@ -1,4 +1,0 @@
-rich>=13.0.0
-requests>=2.25.0
-stix2>=3.0.1
-taxii2-client>=2.3.0

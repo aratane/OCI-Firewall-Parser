@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OCI Parser - Live Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        .live-update {
+            animation: fadeIn 0.3s;
+            margin-bottom: 8px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #progressBar {
+            transition: width 0.3s;
+            height: 20px;
+        }
+
+        .threat-badge {
+            font-size: 0.7em;
+            padding: 3px 6px;
+        }
+
+        #liveFeed {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .detection-card {
+            transition: all 0.3s;
+        }
+
+        .detection-card:hover {
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h1 class="text-center text-primary">Live Firewall Analysis</h1>
+                <div class="progress mt-3 mb-4">
+                    <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar" style="width: 0%">
+                        0%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Live Feed Column -->
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between">
+                        <h4>Live Detection Feed</h4>
+                        <span id="processedCount" class="badge bg-light text-dark">0 processed</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="liveFeed" class="p-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Column -->
+            <div class="col-lg-8">
+                <!-- Summary Section -->
+                <div id="summarySection" class="card mb-4" style="display: none">
+                    <div class="card-header bg-success text-white">
+                        <h4>Summary</h4>
+                    </div>
+                    <div class="card-body" id="summaryContent"></div>
+                </div>
+
+                <!-- Techniques Section -->
+                <div id="techniquesSection" class="card mb-4" style="display: none;">
+                    <div class="card-header bg-info text-white">
+                        <h4>Detected Techniques</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>MITRE ID</th>
+                                        <th>Technique</th>
+                                        <th>Vulnerability</th>
+                                        <th>Severity</th>
+                                        <th>Count</th>
+                                        <th>Payload</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="techniquesTableBody">
+                                    <!-- Data akan diisi oleh JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommendations Section -->
+                <div id="recommendationsSection" class="card mb-4" style="display: none">
+                    <div class="card-header bg-warning text-dark">
+                        <h4>Security Recommendations</h4>
+                    </div>
+                    <div class="card-body" id="recommendationsContent"></div>
+                </div>
+                <div id="downloadSection" class="card mb-4" style="display: none">
+                    <div class="card-header bg-secondary text-white">
+                        <h4>Export Results</h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <a id="downloadBtn" href="#" class="btn btn-primary">
+                            <i class="bi bi-download"></i> Download as CSV
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add this to the script section
+        document.addEventListener("DOMContentLoaded", function () {
+            // Show download button when analysis completes
+            eventSource.addEventListener("complete", function () {
+                document.getElementById("downloadSection").style.display = "block";
+                document.getElementById(
+                    "downloadBtn"
+                ).href = `/download/${sessionId}`;
+            });
+        });
+
+        const sessionId = "{{ session_id }}";
+        const eventSource = new EventSource(`/stream/${sessionId}`);
+        let processedCount = 0;
+        let threatCount = 0;
+
+        // DOM elements
+        const progressBar = document.getElementById("progressBar");
+        const processedCountEl = document.getElementById("processedCount");
+        const liveFeed = document.getElementById("liveFeed");
+
+        eventSource.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+
+            if (data.type === "uri_update") {
+                processedCount++;
+                updateProgress(processedCount);
+
+                // Add to live feed
+                const entry = document.createElement("div");
+                entry.className = `live-update detection-card alert alert-${data.data.is_threat ? "danger" : "success"
+                    }`;
+                entry.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <code class="text-truncate" style="max-width: 70%">${data.data.uri
+                    }</code>
+                        <div>
+                            <span class="badge bg-secondary">${data.data.request_count
+                    } req</span>
+                            ${data.data.is_threat
+                        ? '<span class="badge bg-danger threat-badge">THREAT</span>'
+                        : ""
+                    }
+                        </div>
+                    </div>
+                `;
+                liveFeed.prepend(entry);
+
+                if (data.data.is_threat) {
+                    threatCount++;
+                }
+            } else if (data.type === "ai_detection") {
+                // Highlight AI detection
+                const entry = document.createElement("div");
+                entry.className = "live-update detection-card alert alert-warning";
+                entry.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <code class="text-truncate" style="max-width: 60%">${data.data.uri}</code>
+                        <span class="badge bg-dark">AI Detected: ${data.data.technique}</span>
+                    </div>
+                `;
+                liveFeed.prepend(entry);
+            } else if (data.type === "complete") {
+                // Render complete results
+                renderSummary(data.data.summary);
+                renderTechniques(data.data.techniques);
+                renderRecommendations(data.data.recommendations);
+
+                // Complete progress
+                progressBar.style.width = "100%";
+                progressBar.textContent = "100%";
+                progressBar.classList.remove("progress-bar-animated");
+                progressBar.classList.add("bg-success");
+
+                eventSource.close();
+            } else if (data.type === "error") {
+                const errorDiv = document.createElement("div");
+                errorDiv.className = "alert alert-danger";
+                errorDiv.textContent = `Error: ${data.data}`;
+                liveFeed.prepend(errorDiv);
+            }
+        };
+
+        function updateProgress(count) {
+            const progress = Math.min(100, Math.round((count / 1000) * 100));
+            progressBar.style.width = `${progress}%`;
+            progressBar.textContent = `${progress}%`;
+            processedCountEl.textContent = `${count} processed (${threatCount} )`;
+        }
+
+        function renderSummary(summary) {
+            document.getElementById("summarySection").style.display = "block";
+            document.getElementById("summaryContent").innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="alert alert-info">
+                            <h5>Total Threats Detected</h5>
+                            <h2 class="display-4">${summary.total_attacks}</h2>
+                            <p>across ${summary.unique_uris} unique URIs</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert alert-light">
+                            <h5>Requests Analyzed (AI)</h5>
+                            <h2 class="display-4">${summary.total_requests}</h2>
+                            <p>${summary.total_ids} attack techniques found</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h5>Severity Breakdown</h5>
+                    <div class="row">
+                        ${summary.severity_summary
+                    .map(
+                        (item) => `
+                            <div class="col-sm-3 mb-3">
+                                <div class="card text-white bg-${item.style}">
+                                    <div class="card-body text-center p-2">
+                                        <h6 class="card-title">${item.level}</h6>
+                                        <p class="card-text h4">${item.count}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `
+                    )
+                    .join("")}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTechniques(techniques) {
+            const techniquesSection = document.getElementById('techniquesSection');
+            const techniquesTableBody = document.getElementById('techniquesTableBody');
+            
+            techniquesSection.style.display = 'block';
+            techniquesTableBody.innerHTML = techniques.map(tech => `
+                <tr>
+                    <td><strong>${tech.mitre_id}</strong></td>
+                    <td>${tech.technique}</td>
+                    <td>${tech.vulnerability_name}</td>
+                    <td><span class="badge bg-${tech.severity_style}">${tech.severity}</span></td>
+                    <td>${tech.count}</td>
+                    <td><small><code>${tech.sample_uris[0]?.slice(0, 30) || ''}${tech.sample_uris[0]?.length > 30 ? '...' : ''}</code></small></td>
+                </tr>
+            `).join('');
+        }
+
+        function renderRecommendations(recommendations) {
+            document.getElementById("recommendationsSection").style.display =
+                "block";
+            document.getElementById("recommendationsContent").innerHTML = `
+                <div class="alert alert-info">
+                    ${recommendations.replace(/\n/g, "<br>")}
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
