@@ -9,23 +9,24 @@ import functools
 
 from rich.console import Console
 from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TimeElapsedColumn
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 from rich.table import Table
 from rich.text import Text
-from rich.prompt import Prompt, Confirm
+from urllib.parse import urlparse
 
-import requests
 from taxii2client.v20 import Server
 from stix2 import Filter
 
 console = Console()
 
+# Cache dan proxy
 CACHE_FILE = "mitre_techniques.json"
 PROXIES = {
     "http": os.environ.get("HTTP_PROXY"),
     "https": os.environ.get("HTTPS_PROXY")
 }
 
+# Mapping URI patterns ke MITRE ID
 MITRE_FALSE_NEGATIVE_URI_PATTERNS = {
     "T1505.003": r"/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin\.php",
     "T1059.004": r"User-Agent:.*() { :; };",  # Shellshock pattern in headers
@@ -86,7 +87,7 @@ MITRE_ATTACK_TYPES = {
     "T1083": "File and Directory Discovery (local/remote paths)"
 }
 
-
+# Severity mapping
 MITRE_SEVERITY_LEVEL = {
     "T1552.001": "CRITICAL",
     "T1552.002": "HIGH",
@@ -97,6 +98,14 @@ MITRE_SEVERITY_LEVEL = {
     "T1203": "HIGH",
     "T1055": "MEDIUM",
     "T1566": "INFORMATION"
+}
+
+# Hostname → Identity mapping
+HOSTNAME_IDENTITY_MAP = {
+    "tos-nusantara.pelindo.co.id": "Terminal Operating System Nusantara Cluster 2 - Palapa",
+    "vpn.pelindo.co.id": "Fortinet SSL VPN Gateway",
+    "wp.pelindo.co.id": "WordPress Portal Internal",
+    "api.pelindo.co.id": "API Gateway Pelindo"
 }
 
 def get_severity_style(severity):
@@ -115,10 +124,8 @@ def get_mitre_technique_by_id_lazy(mitre_id):
         server = Server("https://cti-taxii.mitre.org/taxii/")
         api_root = server.api_roots[0]
         collection = next((c for c in api_root.collections if "enterprise" in c.title.lower()), None)
-
         if not collection:
             return {"name": "Unknown", "description": "No data."}
-
         filter_techniques = [Filter("type", "=", "attack-pattern")]
         for obj in collection.query(filter_techniques):
             for ref in obj.get("external_references", []):
@@ -128,16 +135,20 @@ def get_mitre_technique_by_id_lazy(mitre_id):
                         "name": obj.get("name", "Unknown"),
                         "description": obj.get("description", "No description.")
                     }
-
     except Exception:
         return {"name": "N/A", "description": "Connection failed."}
-
     return {"name": "N/A", "description": "Not found."}
 
-MITRE_CACHE = {}
-
-def get_mitre_technique_by_id(mitre_id):
-    return MITRE_CACHE.get(mitre_id) or get_mitre_technique_by_id_lazy(mitre_id)
+def extract_hostname(entry):
+    if "hostname" in entry:
+        return entry["hostname"]
+    uri = entry.get("URI", "")
+    if uri:
+        try:
+            return urlparse(uri).hostname
+        except:
+            return None
+    return None
 
 def analyze_uris(entries):
     mitre_summary = defaultdict(lambda: {"count": 0, "requests": 0, "uris": []})
@@ -155,16 +166,19 @@ def fetch_all_techniques(mitre_ids):
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), BarColumn(), transient=True) as progress:
         task = progress.add_task("🔍 Mengambil data teknik MITRE...", total=len(mitre_ids))
         for mid in mitre_ids:
-            get_mitre_technique_by_id(mid)
-            time.sleep(0.2)
+            get_mitre_technique_by_id_lazy(mid)
+            time.sleep(0.1)
             progress.advance(task)
 
-def display_summary(mitre_summary):
+def display_summary(mitre_summary, entries):
     total_uri = sum(item["count"] for item in mitre_summary.values())
     total_requests = sum(item["requests"] for item in mitre_summary.values())
+    total_attacks = total_uri
     unique_uris = len(set(uri for item in mitre_summary.values() for uri in item["uris"]))
-    total_attacks = sum(item["count"] for item in mitre_summary.values())
-    total_ids = len(mitre_summary)
+
+    all_hosts = list(set(filter(None, [extract_hostname(entry) for entry in entries])))
+    hostname = all_hosts[0] if all_hosts else "-"
+    identity = HOSTNAME_IDENTITY_MAP.get(hostname, "Unknown")
 
     severity_counter = Counter()
     for mitre_id, data in mitre_summary.items():
@@ -177,11 +191,16 @@ def display_summary(mitre_summary):
     )
 
     console.print(Panel.fit(
+        f"[bold]🌐 Hostname     :[/bold] [cyan]{hostname}[/cyan]\n"
+        f"[bold]🏷️ Identity     :[/bold] [green]{identity}[/green]",
+        title="🎯 Target Informasi", border_style="magenta"
+    ))
+
+    console.print(Panel.fit(
         f"[bold cyan]📊 Ringkasan Akhir[/bold cyan]\n"
         f"• Total URI mencurigakan     : [yellow]{total_uri}[/yellow]\n"
         f"• Total Request Terlibat     : [yellow]{total_requests}[/yellow]\n"
         f"• URI Unik yang Mencurigakan : [magenta]{unique_uris}[/magenta]\n"
-        f"• Total ID MITRE Dikenali    : [red]{total_ids}[/red]\n"
         f"• Total Serangan Keseluruhan : [bold red]{total_attacks}[/bold red]\n"
         f"\n[bold]📍 Rekap Berdasarkan Severity:[/bold]\n{severity_summary}",
         title="🛡️ False Negative Detected", border_style="cyan"))
@@ -192,10 +211,9 @@ def display_summary(mitre_summary):
     table.add_column("Severity")
     table.add_column("Jumlah URI", justify="right")
     table.add_column("Total Requests", justify="right")
-    table.add_column("Contoh Payload URI", style="green", no_wrap=False, overflow="fold")
+    table.add_column("Contoh Payload URI", style="green")
 
-    top_5 = sorted(mitre_summary.items(), key=lambda item: item[1]["count"], reverse=True)[:5]
-
+    top_5 = sorted(mitre_summary.items(), key=lambda x: x[1]["count"], reverse=True)[:5]
     for mitre_id, data in top_5:
         category = MITRE_ATTACK_TYPES.get(mitre_id, "Unknown")
         severity = MITRE_SEVERITY_LEVEL.get(mitre_id, "INFO")
@@ -210,14 +228,14 @@ def display_summary(mitre_summary):
             sample_uris
         )
 
-    console.print(table, width=console.width)
+    console.print(table)
 
 def load_json(file_path):
     with open(file_path, "r") as f:
         return json.load(f)
 
 def main():
-    parser = argparse.ArgumentParser(description="🔍 URI Summary + MITRE ATT&CK Hybrid Sync")
+    parser = argparse.ArgumentParser(description="🔍 URI Summary + MITRE ATT&CK")
     parser.add_argument("json_file", help="Path ke file JSON dari OCI Firewall")
     args = parser.parse_args()
 
@@ -227,7 +245,7 @@ def main():
         mitre_summary = analyze_uris(data)
 
     fetch_all_techniques(mitre_summary.keys())
-    display_summary(mitre_summary)
+    display_summary(mitre_summary, data)
 
 if __name__ == "__main__":
     main()
