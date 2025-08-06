@@ -69,6 +69,14 @@ MITRE_ATTACK_TYPES = {
     "T1587.001": "Develop Capabilities: Malware",
     "T1587.002": "Develop Capabilities: Tool",
     "T1587.003": "Develop Capabilities: Exploit"
+    "T1505.003": "PHPUnit Remote Code Execution",
+    "T1059.004": "Shellshock Bash Remote Code Execution (CVE-2014-6271)",
+    "T1595.001": "Path Enumeration Attempt",
+    "T1110.001": "Generic Login Bruteforce Attempt",
+    "T1190.001": "Unauthenticated File Inclusion – LinkPreview Plugin Exploit",
+    "T1110": "Fortinet SSL VPN Credential Stuffing",
+    "T1595.002": "GlobalProtect Login Page Enumeration Attempt",
+    "T1110.003": "WordPress Admin Brute Force Attack"
 }
 
 
