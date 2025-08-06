@@ -3,7 +3,7 @@
 Oracle Cloud Infrastructure (OCI) Firewall log Threat Analyzer adalah tools terminal interaktif berbasis Python yang dirancang untuk membantu tim SOC dan analis keamanan dalam mengidentifikasi pola serangan berdasarkan URI log firewall dan memetakan tekniknya ke dalam framework MITRE ATT&CK.
 
 # Screenshot
-![Proxy Checker](https://github.com/0xjessie21/OCI-Firewall-Parser/blob/main/oci-parser.png)
+![OCI Parser](https://github.com/0xjessie21/OCI-Firewall-Parser/blob/master/oci-parser.png)
 
 # 🚀 Features
 * 🔍 False Negative URI Detection: Analisis URI mencurigakan yang lolos dari deteksi tradisional menggunakan pattern mapping ke teknik MITRE.
