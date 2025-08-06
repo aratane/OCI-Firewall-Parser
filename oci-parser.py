@@ -27,15 +27,16 @@ PROXIES = {
 }
 
 MITRE_FALSE_NEGATIVE_URI_PATTERNS = {
-    "T1552.001": r"/\\.env",
-    "T1552.002": r"/\\.git",
-    "T1083": r"/\\.aws|\\.backup|\\.db|\\.credentials|\\.config|\\.docker|\\.dump|\\.s3|\\.ssh",
-    "T1595": r"/\\.well-known/",
-    "T1190": r"/wp-admin|/wp-content|/wp-login\\.php|/xmlrpc\\.php",
-    "T1040": r"(sql|select|union|from|where)=.*",
-    "T1203": r"\\.\\./|\\.\\.\\\\",
-    "T1055": r"<script>|javascript:|onerror=",
-    "T1566": r"/mail|email|login|webmail"
+    "T1505.003": r"/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin\.php",
+    "T1059.004": r"User-Agent:.*() { :; };",  # Shellshock pattern in headers
+    "T1595.001": r"/admin|/login|/wp-login\.php|/panel|/dashboard|/config|/setup|/dev|/test",
+    "T1592.004": r"/\.git|/\.env|/config\.php|/config\.json|/backup|/dump|/db|/phpinfo\.php",
+    "T1210": r"/vpn|/remote|/ssl-vpn|/global-protect|/clientless",
+    "T1059.001": r"(cmd|command|exec|system)=.*",  # command injection
+    "T1203": r"\.\./|\.\.\\",  # directory traversal
+    "T1040": r"(select|union|from|where)=.*",  # sql injection
+    "T1055": r"<script>|onerror=|javascript:",  # xss
+    "T1110.003": r"/wp-login\.php|/xmlrpc\.php",  # wp brute force
 }
 
 MITRE_ATTACK_TYPES = {
